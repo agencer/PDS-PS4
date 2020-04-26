@@ -230,5 +230,99 @@ kable(table)
 
 Also see from the table that the mean of size-100 trials is closer to the true mean and at the same time, the sampling distribution of sample mean has less variance (smaller standard error).
 
+
+
+
+
+
+
 \newpage
-\section{Q2 - tidyverse}
+\section{Question 2 - Supervised Learning}
+
+\bigskip
+
+Load the following data: http://politicaldatascience.com/PDS/Datasets/SenateForecast/PollingCandidateData92-16.csv. This is is data for incumbents running for re-election to the US Senate.
+
+
+```{r getting ready Q2, include=TRUE, warning = FALSE, message = FALSE}
+rm(list = ls())
+poll.data <- read.csv("http://politicaldatascience.com/PDS/Datasets/SenateForecast/PollingCandidateData92-16.csv")
+```
+
+\begin{itemize}
+\item Poll Percentage.of.Vote.won.x is the percentage of the vote the candidate won.
+\item The other variabels are mostly self-explanatory or have been used before in class.
+\item However, this datset differes in that it is organized at the poll level. That is, there is one row for each poll of each senate race.
+\item So there are some new variables including: the polling firm, the starting date of the poll, the “days left” until Eleciton Day, sample size, and the numberSupport (the number of respondents in that poll who indicated they supported the incumbent candidate.)
+\item There is also a win variable that indicates whether the incumbent candidate won the election.
+\end{itemize}
+
+
+
+\bigskip
+
+\subsection{Re-organize the data so it is a the election level (as opposed to the poll level):}
+
+\bigskip
+
+\begin{itemize}
+  \item This means you will have to figure out how to reduce the polling data into a summary statistic.
+  \item You might try to do this a couple of different ways based on sample size and date of the poll for use later.
+\end{itemize}
+
+```{r Q2 Part 1, include=TRUE, warning = FALSE, message = FALSE}
+poll.data.2 <- poll.data %>%
+  group_by(Candidateidentifier) %>%
+  filter(row_number(Percentage.of.Vote.won.x) == 1) %>%
+  select(-c("pollster", "poll_period", "daysLeft"))
+```
+
+\bigskip
+
+
+
+\subsection{Randomly select 20 percent of your data to use as a “validation sample” to assess the quality of your model. You will use this division of the data in the rest of the problems below:}
+
+\bigskip
+
+```{r Q2 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+
+########  20 percent of data as validation (test) data:
+sample.stat <- sample(1:783, size = 157)
+
+validation <- poll.data.2[sample.stat,]
+train <- poll.data.2[-sample.stat,]
+
+```
+
+\bigskip
+
+\subsection{Using the Poll Percentage.of.Vote.won.x variable, create at least two linear regression models to predict
+vote share for incumbents:}
+
+\begin{itemize}
+  \item You are free to do this any way you want, but you must assess the quality of your model using cross-validation.
+  \item Train your model on your “training” data (80% of the data) and test on on the “test” data.
+  \item Provide an appropriate summary statistic for your compeing models using only the validation set. (Meaning: what is your out-of-sample performance?)
+
+\end{itemize}
+
+\bigskip
+
+```{r Q2 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+
+########  20 percent of data as validation (test) data:
+sample.stat <- sample(1:783, size = 157)
+
+validation <- poll.data.2[sample.stat,]
+train <- poll.data.2[-sample.stat,]
+
+```
+
+\bigskip
+
+
+
+
+
+
