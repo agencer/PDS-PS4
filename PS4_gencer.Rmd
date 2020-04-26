@@ -59,9 +59,9 @@ The variable poleff11 asks participants to rate their level of agreement with th
   \item Convert this variable into a numeric where higher values indicate higher levels of political efficacy (1- strongly agrees with the statement; 5- strongly disagrees with the statment) and all other values (‘Cant choose’ etc.) become NA’s. 
   \item What is the proportion of individuals from the entire sample who feel as though they "have a say in the government?"
   \item Using a sample of 25 from this dataset. What is the average proportion who feel as thought hey have a say?
-  \item Pull a random sample of 25 from the poleff11 data and calculate the mean for this outcome. Now repeat this process 500 times and store these values in a variable called \textbf{trials_25}.
-  \item Now create a variable called trials_100 where we do 500 trials with n=100 instead of 25.
-  \item Draw a histogram of the sampling distribution for the two trials (n=25 vs. n=100) you just conducted. Give the plots meaningful titles and axis labels. Save these plots in your repository.
+  \item Pull a random sample of 25 from the poleff11 data and calculate the mean for this outcome. Now repeat this process 500 times and store these values in a variable called trials 25.
+  \item Now create a variable called trials 100 where we do 500 trials with $n = 100$ instead of $25$.
+  \item Draw a histogram of the sampling distribution for the two trials $(n=25$ vs. $n=100)$ you just conducted. Give the plots meaningful titles and axis labels. Save these plots in your repository.
   \item What notable difference occur when we use a larger sample size in our trials?
 \end{enumerate}
 
@@ -75,7 +75,6 @@ Load the following data: http://politicaldatascience.com/PDS/Datasets/GSS-data.c
 ```{r getting ready Q1, include=TRUE, warning = FALSE, message = FALSE}
 rm(list = ls())
 gss.data <- read.csv("http://politicaldatascience.com/PDS/Datasets/GSS-data.csv")
-gss.codebook <- read.csv("http://politicaldatascience.com/PDS/Datasets/gss_codebook.xlsx")
 gss.data <- gss.data[-c(2349, 2350), ] ## included some unrelated information
 ```
 
@@ -117,7 +116,7 @@ prop_have.a.say
 
 \subsection{Using a sample of 25 from this dataset. What is the average proportion who feel as thought hey have a say?:}
 
-```{r Q1 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+```{r Q1 Part 3, include=TRUE, warning = FALSE, message = FALSE}
 set.seed(20200425)
 
 #---  including NA values:
@@ -134,18 +133,18 @@ sum(sample25_no.na>=4, na.rm = T)/25
 
 \subsection{Pull a random sample of 25 from the poleff11 data and calculate the mean for this outcome. Now repeat this process 500 times and store these values in a variable called \textbf{trials_25}:}
 
-```{r Q1 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+```{r Q1 Part 4, include=TRUE, warning = FALSE, message = FALSE}
 
 ########  For convenience, I will be solving by removing NA's. 
 
 #---  Random one sample:
-mean(sample(na.omit(gss.data$poleff11.recoded), size =25))
+mean(sample(na.omit(gss.data$poleff11.recoded), size =25, replace = T))
 
 
 #---  Random 500 samples:
 trials_25 <- NULL
 for(i in 1:500){
-  trials_25 <- c(trials_25, mean(sample(na.omit(gss.data$poleff11.recoded), size =25)))
+  trials_25 <- c(trials_25, mean(sample(na.omit(gss.data$poleff11.recoded), size =25, replace = T)))
 }
 
 ```
@@ -156,18 +155,18 @@ for(i in 1:500){
 
 \subsection{Now create a variable called trials_100 where we do 500 trials with n=100 instead of 25:}
 
-```{r Q1 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+```{r Q1 Part 5, include=TRUE, warning = FALSE, message = FALSE}
 
 ########  For convenience, I will be solving by removing NA's. 
 
 #---  Random one sample with n = 100:
-mean(sample(na.omit(gss.data$poleff11.recoded), size =100))
+mean(sample(na.omit(gss.data$poleff11.recoded), size =100, replace = T))
 
 
 #---  Random 500 samples with n = 100:
 trials_100 <- NULL
 for(i in 1:500){
-  trials_100 <- c(trials_100, mean(sample(na.omit(gss.data$poleff11.recoded), size =100)))
+  trials_100 <- c(trials_100, mean(sample(na.omit(gss.data$poleff11.recoded), size =100, replace = T)))
 }
 
 ```
@@ -178,27 +177,58 @@ for(i in 1:500){
 
 \subsection{Draw a histogram of the sampling distribution for the two trials (n=25 vs. n=100) you just conducted. Give the plots meaningful titles and axis labels. Save these plots in your repository.:}
 
-```{r Q1 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+```{r Q1 Part 6, include=TRUE, warning = FALSE, message = FALSE, fig.align = "center", fig.cap = "Sampling Distributions with Varying Sample Sizes"}
+library(tidyverse)
+##install.packages("ggpubr")
+library(ggpubr)
 
+df.trials <- as.data.frame(cbind(trials_25, trials_100))
 
+p_trials_100 <- ggplot(df.trials) +
+  geom_histogram(aes(trials_100), bins = 100, fill = "red") +
+  xlab("Sample Means") +
+  ggtitle("Sampling Dist. with Size 100") +
+  ylim(0,50) +
+  xlim(2,4) +
+  theme_light()
+
+p_trials_25 <- ggplot(df.trials) +
+  geom_histogram(aes(trials_25), bins = 100, fill = "blue") +
+  xlab("Sample Means") +
+  ggtitle("Sampling Dist. with Size 25") +
+  ylim(0,50) +
+  xlim(2,4) +
+  theme_light()
+
+ggarrange(p_trials_100, p_trials_25,
+                    ncol = 2, nrow = 1)
 
 ```
-
-
 
 
 \bigskip
 
-\subsection{What notable difference occur when we use a larger sample size in our trials?
-:}
+\subsection{What notable difference occur when we use a larger sample size in our trials?:}
 
-```{r Q1 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+\bigskip
 
+As it can be seen in the graph, the spead of the sampling distribution with sample size 100 is narrower than the one with sample size 25.
 
+```{r Q1 Part 7, include=TRUE, warning = FALSE, message = FALSE}
+library(knitr)
 
+table <- cbind(mean(na.omit(gss.data$poleff11.recoded)), mean(trials_100), 
+      sd(trials_100), mean(trials_25), sd(trials_25))
+
+colnames(table) <- c("True Mean", "Size-100 Mean", "Size-100 SD", 
+                  "Size-25 Mean", "Size-25 SD")
+
+kable(table)
 ```
 
+\bigskip
 
+Also see from the table that the mean of size-100 trials is closer to the true mean and at the same time, the sampling distribution of sample mean has less variance (smaller standard error).
 
 \newpage
 \section{Q2 - tidyverse}
