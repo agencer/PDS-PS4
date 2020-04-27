@@ -4,6 +4,7 @@ subtitle: "Political Data Science - Spring 2020"
 date: "Due May 1, 10:00 AM (Before Class)"
 author: "Gencer, Alper Sukru"
 output: pdf_document
+number_sections: yes
 header-includes:
   - \usepackage{color}
   - \usepackage{float}
@@ -288,17 +289,16 @@ poll.data.2 <- poll.data %>%
 ```{r Q2 Part 2, include=TRUE, warning = FALSE, message = FALSE}
 
 ########  20 percent of data as validation (test) data:
-sample.stat <- sample(1:783, size = 157)
 
-validation <- poll.data.2[sample.stat,]
-train <- poll.data.2[-sample.stat,]
+library(rsample)
+
+#---  See the following courses chunk below:
 
 ```
 
 \bigskip
 
-\subsection{Using the Poll Percentage.of.Vote.won.x variable, create at least two linear regression models to predict
-vote share for incumbents:}
+\subsection{Using the Poll Percentage.of.Vote.won.x variable, create at least two linear regression models to predict vote share for incumbents:}
 
 \begin{itemize}
   \item You are free to do this any way you want, but you must assess the quality of your model using cross-validation.
@@ -309,20 +309,256 @@ vote share for incumbents:}
 
 \bigskip
 
-```{r Q2 Part 2, include=TRUE, warning = FALSE, message = FALSE}
+```{r Q2 Part 3, include=TRUE, warning = FALSE, message = FALSE}
 
-########  20 percent of data as validation (test) data:
-sample.stat <- sample(1:783, size = 157)
 
-validation <- poll.data.2[sample.stat,]
-train <- poll.data.2[-sample.stat,]
+########  Linear Baseline Models:
+####
+
+rmse0 <- c()        ####  Model 0   Percentage.of.Vote.won.x ~ Democrat 
+rmse1 <- c()        ####  Model 1   Percentage.of.Vote.won.x ~ Democrat + incumbent
+rmse2 <- c()        ####  Model 2   Percentage.of.Vote.won.x ~ Democrat + pvi
+rmse3 <- c()        ####  Model 3   Percentage.of.Vote.won.x ~ Democrat + cycle
+rmse4 <- c()        ####  Model 4   Percentage.of.Vote.won.x ~ Democrat + weightexperience
+rmse5 <- c()        ####  Model 4   Percentage.of.Vote.won.x ~ Democrat + state
+
+
+
+####
+####  Model 0   Percentage.of.Vote.won.x ~ Democrat 
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse0 <- c(rmse0, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+mean(rmse0)
+
+
+####
+####  Model 1   Percentage.of.Vote.won.x ~ Democrat + Incumbent
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + factor(Incumbent), data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse1 <- c(rmse1, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  Model 2   Percentage.of.Vote.won.x ~ Democrat + pvi
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + pvi, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse2 <- c(rmse2, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  Model 3   Percentage.of.Vote.won.x ~ Democrat + cycle
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + factor(cycle), data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse3 <- c(rmse3, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  Model 4   Percentage.of.Vote.won.x ~ Democrat + weightexperience
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + weightexperience, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse4 <- c(rmse4, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  Model 5   Percentage.of.Vote.won.x ~ Democrat + state
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + factor(state), data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse5 <- c(rmse5, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+
+df.1 <- data.frame(cbind(mean(rmse0), mean(rmse1), mean(rmse2), mean(rmse3), mean(rmse4), mean(rmse5)))
+colnames(df.1) <- c("Baseline (BL)", "BL + Incumbent", "BL + pvi", "BL + cycle", "BL + weightexperience", "BL + state")                 
+kable(df.1)
 
 ```
 
 \bigskip
 
+See that the models with 1) Incumbent and 2) weightexperience are the models we are to focus on.
+
+\bigskip
+
+```{r Q2 Part 4, include=TRUE, warning = FALSE, message = FALSE}
+
+
+########  Linear Baseline Models:
+####
+
+rmse6 <- c()        ####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(Incumbent, 2) 
+rmse7 <- c()        ####  Model 7   Percentage.of.Vote.won.x ~ Democrat * Incumbent
+rmse8 <- c()        ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + poly(weightexperience, 2) 
+rmse9 <- c()        ####  Model 9   Percentage.of.Vote.won.x ~ Democrat * weightexperience
+rmse10<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent + weightexperience
+rmse11<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent * weightexperience
 
 
 
 
+####
+####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(Incumbent, 2) 
+####
 
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + poly(Incumbent, 2) , data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse6 <- c(rmse6, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  Model 7   Percentage.of.Vote.won.x ~ Democrat * Incumbent
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat * Incumbent, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse7 <- c(rmse7, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + poly(weightexperience, 2) 
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + poly(weightexperience, 2) , data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse8 <- c(rmse8, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  ####  Model 9   Percentage.of.Vote.won.x ~ Democrat * weightexperience
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat * weightexperience, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse9 <- c(rmse9, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+
+####
+####  ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent + weightexperience
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~  Democrat + Incumbent + weightexperience, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse10 <- c(rmse10, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+####
+####  ####  Model 11  Percentage.of.Vote.won.x ~ Democrat + Incumbent * weightexperience
+####
+
+for(i in 1:500){
+  split_electData <- initial_split(poll.data.2, prop=.8)
+  elect_train <- training(split_electData)
+  elect_test <- testing(split_electData)
+  model <- lm(Percentage.of.Vote.won.x ~  Democrat * Incumbent * weightexperience, data = elect_train)
+  pred <- predict(model, newdata = elect_test)
+  rmse11 <- c(rmse11, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
+}
+
+df.2 <- data.frame(cbind(mean(rmse0), mean(rmse6), mean(rmse7), mean(rmse8), mean(rmse9), 
+                         mean(rmse10), mean(rmse11)))
+colnames(df.2) <- c("BL", "Poly Inc", "Int. Inc.", "Poly weight",
+                    "Int. weight", "BL + Inc + weight",
+                    "Int. Inc and  weight")                
+kable(df.2)
+
+
+```
+
+\bigskip
+
+As it can be seen above, the smallest root mean square errors belongs to the additive model of democrat, weightexperience, and incumbency.
+
+\newpage
+
+\subsection{Now, using the win variable as your outcome, create at least 3 classification models. You should again assess each model on your “validation” set using appropriate methods. You must fit at least one of each:}
+\begin{itemize}
+  \item linear classifier,
+  \item random forest model,
+  \item K-nearest neighbors.
+\end{itemize}
+
+\bigskip
+
+
+\bigskip
+
+
+\newpage
+
+\subsection{Now you are going to assess your classifiers using the 2018 election.:}
+
+\begin{itemize}
+  \item Most of the data you need is here: http://politicaldatascience.com/PDS/Datasets/SenateForecast/PollingCandidateData18.csv.
+  \item BUT, this dataset is missing (a) the final outcome and (b) a lot of the polling data.
+  \item Scrape the election results and polls from ballotpedia.org.
+  \item This does not need to be perfect, but should demonstrate the basic skills covered on webscraping.
+  \item Assess how each of your classifiers performs for 2018 using appropriate metrics.
+\end{itemize}
+
+\bigskip
