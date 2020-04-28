@@ -312,6 +312,7 @@ library(rsample)
 ```{r Q2 Part 3, include=TRUE, warning = FALSE, message = FALSE}
 
 
+
 ########  Linear Baseline Models:
 ####
 
@@ -545,6 +546,72 @@ As it can be seen above, the smallest root mean square errors belongs to the add
 
 \bigskip
 
+```{r Q2 Part 5, include=TRUE, warning = FALSE, message = FALSE}
+
+####
+########  LINEAR CLASSIFIER
+####
+
+Model1 <- glm(win ~ Incumbent + weightexperience, family="binomial", data=poll.data.2)
+summary(Model1)
+
+########  Within sample prediction (Fitted Values)
+####
+Model1preds <- predict(Model1, type="response") ##  Type = response assures that the outcome is squashed towards 0 or 1.
+
+########  Let's look at the predicted probabilities for each value of Weighted Experience in the dataset.
+####
+boxplot(Model1preds ~ poll.data.2$weightexperience, xlab="Weighted Experience", ylab="Predicted Probabilities")
+
+binaryPred <- (Model1preds > 0.5) * 1
+table <- table(binaryPred, poll.data.2$win)
+nrow(poll.data.2)
+
+precision <- table[2,2] / (table[2,1] + table[2,2])
+precision
+
+recall <- table[2,2] / (table[2,2] + table[1,2])
+recall
+
+accuracy <- (table[2,2] + table[1,1]) / (nrow(poll.data.2))
+accuracy
+
+(as.data.frame(cbind(c("precision", "recall", "accuracy"), c(precision, recall, accuracy))))
+
+
+
+####
+########  RANDOM FOREST MODEL,
+####
+
+
+##install.packages("rpart")
+library(rpart)
+
+equation <- as.formula("win ~ Incumbent + weightexperience")
+tree_mod1 <- rpart(equation, data = poll.data.2)
+
+########  Let's look at our tree:
+####
+tree_mod1
+
+plot(tree_mod1)
+text(tree_mod1, use.n = T, all = T, cex = 0.3)
+  
+
+
+
+
+####
+########  K-NEAREST NEIGHBORS
+####
+
+
+
+
+
+```
+
 
 \bigskip
 
@@ -562,3 +629,12 @@ As it can be seen above, the smallest root mean square errors belongs to the add
 \end{itemize}
 
 \bigskip
+
+
+```{r Q2 Part 6, include=TRUE, warning = FALSE, message = FALSE}
+
+
+
+
+
+```
