@@ -581,7 +581,7 @@ accuracy
 
 
 ####
-########  RANDOM FOREST MODEL,
+########  TREE MODELS
 ####
 
 
@@ -596,9 +596,64 @@ tree_mod1 <- rpart(equation, data = poll.data.2)
 tree_mod1
 
 plot(tree_mod1)
-text(tree_mod1, use.n = T, all = T, cex = 0.3)
+text(tree_mod1, use.n = T, all = T, cex = 0.7)
   
 
+########  Let's check for accuracy meansures:
+####
+
+#---    TREE 1:
+treePreds1 <- predict(tree_mod1)
+table.tree.1 <- table((treePreds1>=0.5)*1, poll.data.2$win)
+accuracy.tree.1 <- round((table.tree.1[1,1] + table.tree.1[2,2]) / nrow(poll.data.2),4)
+brier.tree.1 <- round(sqrt(sum((poll.data.2$win - treePreds1)^2)/nrow(poll.data.2)),4)
+kable(as.data.frame(cbind(c("Accuracy", "Brier Score"), c(accuracy.tree.1, brier.tree.1))))
+
+#---    TREE 2:
+tree_mod2 <- rpart(equation, data=poll.data.2, control=rpart.control(cp=.02))
+treePreds2 <- predict(tree_mod2)
+table.tree.2 <- table((treePreds2>=0.5)*1, poll.data.2$win)
+accuracy.tree.2 <- round((table.tree.2[1,1] + table.tree.2[2,2]) / nrow(poll.data.2),4)
+brier.tree.2 <- round(sqrt(sum((poll.data.2$win - treePreds2)^2)/nrow(poll.data.2)),4)
+kable(as.data.frame(cbind(c("Accuracy", "Brier Score"), c(accuracy.tree.2, brier.tree.2))))
+
+#---    TREE 3:
+tree_mod3 <- rpart(equation, data=poll.data.2, control=rpart.control(cp=0.0001))
+treePreds3 <- predict(tree_mod3)
+table.tree.3 <- table((treePreds3>=0.5)*1, poll.data.2$win)
+accuracy.tree.3 <- round((table.tree.3[1,1] + table.tree.3[2,2]) / nrow(poll.data.2),4)
+brier.tree.3 <- round(sqrt(sum((poll.data.2$win - treePreds3)^2)/nrow(poll.data.2)),4)
+kable(as.data.frame(cbind(c("Accuracy", "Brier Score"), c(accuracy.tree.3, brier.tree.3))))
+
+########  Let's compare scores:
+####
+
+kable(as.data.frame(cbind(c("Accuracy", "Brier Score"), c(accuracy.tree.1, brier.tree.1), 
+                    c(accuracy.tree.2, brier.tree.2), c(accuracy.tree.3, brier.tree.3))))
+
+
+#---  Brier score of the third model is smallest!
+
+
+
+####
+########  RANDOM FOREST MODEL
+####
+
+library(randomForest)
+
+poll.data.2$win.factor <- as.factor(poll.data.2$win)
+equation.2 <- as.formula("win.factor ~ Incumbent + weightexperience")
+
+
+mod1_forest <- randomForest(equation.2, data=poll.data.2, ntree=600, mtry=2, maxnodes = 5)
+mod1_forest # This confusion matrix is "out of bag"
+
+
+########    Let's check the accuracy:
+####
+pred.forest.1 <- predict(mod1_forest)
+table(pred.forest.1, poll.data.2$win)
 
 
 
@@ -608,7 +663,20 @@ text(tree_mod1, use.n = T, all = T, cex = 0.3)
 
 
 
+library(class)
 
+########  Creating Control Matrix
+####
+poll.data.2.X <- poll.data.2[,c("win", "weightexperience", "Incumbent")]
+poll.data.2.X$win <- as.numeric(poll.data.2.X$win) - 1
+########  Creating DV Vector
+####
+poll.data.2.X$win <- (as.numeric(poll.data.2.X$win) + rnorm(length(poll.data.2.X$win), 0, .001))
+
+########  Run on Test Matrix
+####
+mod1_knn <- knn(poll.data.2.X, test=poll.data.2.X, cl=poll.data.2$win, k=10)
+table(mod1_knn, poll.data.2$win)
 
 ```
 
@@ -633,8 +701,10 @@ text(tree_mod1, use.n = T, all = T, cex = 0.3)
 
 ```{r Q2 Part 6, include=TRUE, warning = FALSE, message = FALSE}
 
+rm(list = ls())
+gss.data <- read.csv("http://politicaldatascience.com/PDS/Datasets/GSS-data.csv")
+gss.data <- gss.data[-c(2349, 2350), ] ## included some unrelated information
 
-
-
+gss.data.18 <- read.csv("http://politicaldatascience.com/PDS/Datasets/SenateForecast/PollingCandidateData18.csv")
 
 ```
