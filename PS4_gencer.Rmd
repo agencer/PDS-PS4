@@ -272,14 +272,24 @@ poll.data <- read.csv("http://politicaldatascience.com/PDS/Datasets/SenateForeca
 \end{itemize}
 
 ```{r Q2 Part 1, include=TRUE, warning = FALSE, message = FALSE}
+
+########  Here, I will create a variable based on the existing poll:
+####        1) Total Number Support divided by Total Sample Size and
+
 poll.data.2 <- poll.data %>%
   group_by(Candidateidentifier) %>%
+  mutate(aveg_support =  (sum(numberSupport) / sum(samplesize))*100)
+
+########  Now, get rid of repeated polls and keep only incumbents:
+
+poll.data.2 <- poll.data.2 %>%
+  group_by(Candidateidentifier) %>%
   filter(row_number(Percentage.of.Vote.won.x) == 1) %>%
-  select(-c("pollster", "poll_period", "daysLeft"))
+  filter(Incumbent == 1) %>%
+  select(-c("pollster", "numberSupport", "samplesize", "poll_period", "daysLeft"))
 ```
 
 \bigskip
-
 
 
 \subsection{Randomly select 20 percent of your data to use as a “validation sample” to assess the quality of your model. You will use this division of the data in the rest of the problems below:}
@@ -317,7 +327,7 @@ library(rsample)
 ####
 
 rmse0 <- c()        ####  Model 0   Percentage.of.Vote.won.x ~ Democrat 
-rmse1 <- c()        ####  Model 1   Percentage.of.Vote.won.x ~ Democrat + incumbent
+rmse1 <- c()        ####  Model 1   Percentage.of.Vote.won.x ~ Democrat + aveg_support
 rmse2 <- c()        ####  Model 2   Percentage.of.Vote.won.x ~ Democrat + pvi
 rmse3 <- c()        ####  Model 3   Percentage.of.Vote.won.x ~ Democrat + cycle
 rmse4 <- c()        ####  Model 4   Percentage.of.Vote.won.x ~ Democrat + weightexperience
@@ -341,17 +351,18 @@ mean(rmse0)
 
 
 ####
-####  Model 1   Percentage.of.Vote.won.x ~ Democrat + Incumbent
+####  Model 1   Percentage.of.Vote.won.x ~ Democrat + aveg_support
 ####
 
 for(i in 1:500){
   split_electData <- initial_split(poll.data.2, prop=.8)
   elect_train <- training(split_electData)
   elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~ Democrat + factor(Incumbent), data = elect_train)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + aveg_support, data = elect_train)
   pred <- predict(model, newdata = elect_test)
   rmse1 <- c(rmse1, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse1)
 
 
 ####
@@ -366,6 +377,7 @@ for(i in 1:500){
   pred <- predict(model, newdata = elect_test)
   rmse2 <- c(rmse2, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse2)
 
 
 ####
@@ -380,6 +392,7 @@ for(i in 1:500){
   pred <- predict(model, newdata = elect_test)
   rmse3 <- c(rmse3, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse3)
 
 
 ####
@@ -394,6 +407,7 @@ for(i in 1:500){
   pred <- predict(model, newdata = elect_test)
   rmse4 <- c(rmse4, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse4)
 
 
 ####
@@ -408,18 +422,19 @@ for(i in 1:500){
   pred <- predict(model, newdata = elect_test)
   rmse5 <- c(rmse5, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse5)
 
 
 
 df.1 <- data.frame(cbind(mean(rmse0), mean(rmse1), mean(rmse2), mean(rmse3), mean(rmse4), mean(rmse5)))
-colnames(df.1) <- c("Baseline (BL)", "BL + Incumbent", "BL + pvi", "BL + cycle", "BL + weightexperience", "BL + state")                 
+colnames(df.1) <- c("Baseline (BL)", "BL + Aveg. Support", "BL + pvi", "BL + cycle", "BL + weightexperience", "BL + state")                 
 kable(df.1)
 
 ```
 
 \bigskip
 
-See that the models with 1) Incumbent and 2) weightexperience are the models we are to focus on.
+See that the models with 1) Average Support, 2) pvi, 3) Weighted Experience, and 4) Statesare the models we are to focus on.
 
 \bigskip
 
@@ -429,103 +444,100 @@ See that the models with 1) Incumbent and 2) weightexperience are the models we 
 ########  Linear Baseline Models:
 ####
 
-rmse6 <- c()        ####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(Incumbent, 2) 
-rmse7 <- c()        ####  Model 7   Percentage.of.Vote.won.x ~ Democrat * Incumbent
-rmse8 <- c()        ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + poly(weightexperience, 2) 
-rmse9 <- c()        ####  Model 9   Percentage.of.Vote.won.x ~ Democrat * weightexperience
-rmse10<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent + weightexperience
+rmse6 <- c()        ####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(aveg_support, 2) 
+rmse7 <- c()        ####  Model 7   Percentage.of.Vote.won.x ~ Democrat * aveg_support
+rmse8 <- c()        ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + aveg_support + weightexperience 
+rmse9 <- c()        ####  Model 9   Percentage.of.Vote.won.x ~ Democrat * aveg_support + pvi 
+rmse10<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + aveg_support + state
 rmse11<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent * weightexperience
 
 
 
 
 ####
-####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(Incumbent, 2) 
+####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(aveg_support, 2) 
 ####
 
 for(i in 1:500){
   split_electData <- initial_split(poll.data.2, prop=.8)
   elect_train <- training(split_electData)
   elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~ Democrat + poly(Incumbent, 2) , data = elect_train)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + poly(aveg_support, 2) , data = elect_train)
   pred <- predict(model, newdata = elect_test)
   rmse6 <- c(rmse6, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse6) # See that it is almost same with model without poly. So discard this model!
 
 
 ####
-####  Model 7   Percentage.of.Vote.won.x ~ Democrat * Incumbent
+####  Model 7   Percentage.of.Vote.won.x ~ Democrat * aveg_support
 ####
 
 for(i in 1:500){
   split_electData <- initial_split(poll.data.2, prop=.8)
   elect_train <- training(split_electData)
   elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~ Democrat * Incumbent, data = elect_train)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat * aveg_support, data = elect_train)
   pred <- predict(model, newdata = elect_test)
   rmse7 <- c(rmse7, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse7) # See that it is worse than the baseline model without interaction. 
+            # So discard this model!
 
 
 ####
-####  ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + poly(weightexperience, 2) 
+####  ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + aveg_support + weightexperience 
 ####
 
 for(i in 1:500){
   split_electData <- initial_split(poll.data.2, prop=.8)
   elect_train <- training(split_electData)
   elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~ Democrat + poly(weightexperience, 2) , data = elect_train)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat + aveg_support + weightexperience , data = elect_train)
   pred <- predict(model, newdata = elect_test)
   rmse8 <- c(rmse8, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse8) # See that it is worse than the baseline model only democrat and aveg_support. 
+            # So discard this model!
 
 
 ####
-####  ####  Model 9   Percentage.of.Vote.won.x ~ Democrat * weightexperience
+####  ####  Model 9   Percentage.of.Vote.won.x ~ Democrat + aveg_support + pvi
 ####
 
 for(i in 1:500){
   split_electData <- initial_split(poll.data.2, prop=.8)
   elect_train <- training(split_electData)
   elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~ Democrat * weightexperience, data = elect_train)
+  model <- lm(Percentage.of.Vote.won.x ~ Democrat * aveg_support + pvi, data = elect_train)
   pred <- predict(model, newdata = elect_test)
   rmse9 <- c(rmse9, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse9) # See that it is worse than the baseline model only democrat and aveg_support. 
+            # So discard this model!
+
 
 
 ####
-####  ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent + weightexperience
+####  ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + aveg_support + state
 ####
 
 for(i in 1:500){
   split_electData <- initial_split(poll.data.2, prop=.8)
   elect_train <- training(split_electData)
   elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~  Democrat + Incumbent + weightexperience, data = elect_train)
+  model <- lm(Percentage.of.Vote.won.x ~  Democrat + aveg_support + as.factor(state), data = elect_train)
   pred <- predict(model, newdata = elect_test)
   rmse10 <- c(rmse10, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
 }
+mean(rmse10) # See that it is worse than the baseline model only democrat and aveg_support. 
+             # So discard this model!
 
-####
-####  ####  Model 11  Percentage.of.Vote.won.x ~ Democrat + Incumbent * weightexperience
-####
 
-for(i in 1:500){
-  split_electData <- initial_split(poll.data.2, prop=.8)
-  elect_train <- training(split_electData)
-  elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~  Democrat * Incumbent * weightexperience, data = elect_train)
-  pred <- predict(model, newdata = elect_test)
-  rmse11 <- c(rmse11, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
-}
-
-df.2 <- data.frame(cbind(mean(rmse0), mean(rmse6), mean(rmse7), mean(rmse8), mean(rmse9), 
-                         mean(rmse10), mean(rmse11)))
-colnames(df.2) <- c("BL", "Poly Inc", "Int. Inc.", "Poly weight",
-                    "Int. weight", "BL + Inc + weight",
-                    "Int. Inc and  weight")                
+df.2 <- data.frame(cbind(mean(rmse1), mean(rmse6), mean(rmse7), mean(rmse8), mean(rmse9), 
+                         mean(rmse10)))
+colnames(df.2) <- c("BL", "Poly aveg_support", "Int. aveg_support", "aveg_support + weight",
+                    "aveg_support + pvi", "aveg_support + state")                
 kable(df.2)
 
 
@@ -533,7 +545,7 @@ kable(df.2)
 
 \bigskip
 
-As it can be seen above, the smallest root mean square errors belongs to the additive model of democrat, weightexperience, and incumbency.
+As it can be seen above, the smallest root mean square errors belongs to the additive model of democrat and average support.
 
 \newpage
 
@@ -552,7 +564,7 @@ As it can be seen above, the smallest root mean square errors belongs to the add
 ########  LINEAR CLASSIFIER
 ####
 
-Model1 <- glm(win ~ Incumbent + weightexperience, family="binomial", data=poll.data.2)
+Model1 <- glm(win ~ Democrat + aveg_support, family="binomial", data=poll.data.2)
 summary(Model1)
 
 ########  Within sample prediction (Fitted Values)
@@ -561,7 +573,7 @@ Model1preds <- predict(Model1, type="response") ##  Type = response assures that
 
 ########  Let's look at the predicted probabilities for each value of Weighted Experience in the dataset.
 ####
-boxplot(Model1preds ~ poll.data.2$weightexperience, xlab="Weighted Experience", ylab="Predicted Probabilities")
+boxplot(Model1preds ~ poll.data.2$aveg_support, xlab="Average Support", ylab="Predicted Probabilities")
 
 binaryPred <- (Model1preds > 0.5) * 1
 table <- table(binaryPred, poll.data.2$win)
@@ -588,7 +600,7 @@ accuracy
 ##install.packages("rpart")
 library(rpart)
 
-equation <- as.formula("win ~ Incumbent + weightexperience")
+equation <- as.formula("win ~ Democrat + aveg_support")
 tree_mod1 <- rpart(equation, data = poll.data.2)
 
 ########  Let's look at our tree:
@@ -643,7 +655,7 @@ kable(as.data.frame(cbind(c("Accuracy", "Brier Score"), c(accuracy.tree.1, brier
 library(randomForest)
 
 poll.data.2$win.factor <- as.factor(poll.data.2$win)
-equation.2 <- as.formula("win.factor ~ Incumbent + weightexperience")
+equation.2 <- as.formula("win.factor ~ Democrat + aveg_support")
 
 
 mod1_forest <- randomForest(equation.2, data=poll.data.2, ntree=600, mtry=2, maxnodes = 5)
@@ -667,7 +679,7 @@ library(class)
 
 ########  Creating Control Matrix
 ####
-poll.data.2.X <- poll.data.2[,c("win", "weightexperience", "Incumbent")]
+poll.data.2.X <- poll.data.2[,c("win", "Democrat", "aveg_support")]
 poll.data.2.X$win <- as.numeric(poll.data.2.X$win) - 1
 ########  Creating DV Vector
 ####
@@ -706,5 +718,6 @@ gss.data <- read.csv("http://politicaldatascience.com/PDS/Datasets/GSS-data.csv"
 gss.data <- gss.data[-c(2349, 2350), ] ## included some unrelated information
 
 gss.data.18 <- read.csv("http://politicaldatascience.com/PDS/Datasets/SenateForecast/PollingCandidateData18.csv")
+
 
 ```
