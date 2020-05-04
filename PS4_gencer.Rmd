@@ -331,7 +331,6 @@ rmse1 <- c()        ####  Model 1   Percentage.of.Vote.won.x ~ Democrat + aveg_s
 rmse2 <- c()        ####  Model 2   Percentage.of.Vote.won.x ~ Democrat + pvi
 rmse3 <- c()        ####  Model 3   Percentage.of.Vote.won.x ~ Democrat + cycle
 rmse4 <- c()        ####  Model 4   Percentage.of.Vote.won.x ~ Democrat + weightexperience
-rmse5 <- c()        ####  Model 4   Percentage.of.Vote.won.x ~ Democrat + state
 
 
 
@@ -410,24 +409,11 @@ for(i in 1:500){
 mean(rmse4)
 
 
-####
-####  Model 5   Percentage.of.Vote.won.x ~ Democrat + state
-####
-
-for(i in 1:500){
-  split_electData <- initial_split(poll.data.2, prop=.8)
-  elect_train <- training(split_electData)
-  elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~ Democrat + factor(state), data = elect_train)
-  pred <- predict(model, newdata = elect_test)
-  rmse5 <- c(rmse5, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
-}
-mean(rmse5)
 
 
 
-df.1 <- data.frame(cbind(mean(rmse0), mean(rmse1), mean(rmse2), mean(rmse3), mean(rmse4), mean(rmse5)))
-colnames(df.1) <- c("Baseline (BL)", "BL + Aveg. Support", "BL + pvi", "BL + cycle", "BL + weightexperience", "BL + state")                 
+df.1 <- data.frame(cbind(mean(rmse0), mean(rmse1), mean(rmse2), mean(rmse3), mean(rmse4)))
+colnames(df.1) <- c("Baseline (BL)", "BL + Aveg. Support", "BL + pvi", "BL + cycle", "BL + weightexperience")                 
 kable(df.1)
 
 ```
@@ -448,8 +434,6 @@ rmse6 <- c()        ####  Model 6   Percentage.of.Vote.won.x ~ Democrat + poly(a
 rmse7 <- c()        ####  Model 7   Percentage.of.Vote.won.x ~ Democrat * aveg_support
 rmse8 <- c()        ####  Model 8   Percentage.of.Vote.won.x ~ Democrat + aveg_support + weightexperience 
 rmse9 <- c()        ####  Model 9   Percentage.of.Vote.won.x ~ Democrat * aveg_support + pvi 
-rmse10<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + aveg_support + state
-rmse11<- c()        ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + Incumbent * weightexperience
 
 
 
@@ -518,26 +502,9 @@ mean(rmse9) # See that it is worse than the baseline model only democrat and ave
 
 
 
-####
-####  ####  Model 10  Percentage.of.Vote.won.x ~ Democrat + aveg_support + state
-####
-
-for(i in 1:500){
-  split_electData <- initial_split(poll.data.2, prop=.8)
-  elect_train <- training(split_electData)
-  elect_test <- testing(split_electData)
-  model <- lm(Percentage.of.Vote.won.x ~  Democrat + aveg_support + as.factor(state), data = elect_train)
-  pred <- predict(model, newdata = elect_test)
-  rmse10 <- c(rmse10, sqrt(mean((pred-elect_test$Percentage.of.Vote.won.x)^2)))  
-}
-mean(rmse10) # See that it is worse than the baseline model only democrat and aveg_support. 
-             # So discard this model!
-
-
-df.2 <- data.frame(cbind(mean(rmse1), mean(rmse6), mean(rmse7), mean(rmse8), mean(rmse9), 
-                         mean(rmse10)))
+df.2 <- data.frame(cbind(mean(rmse1), mean(rmse6), mean(rmse7), mean(rmse8), mean(rmse9)))
 colnames(df.2) <- c("BL", "Poly aveg_support", "Int. aveg_support", "aveg_support + weight",
-                    "aveg_support + pvi", "aveg_support + state")                
+                    "aveg_support + pvi")                
 kable(df.2)
 
 
